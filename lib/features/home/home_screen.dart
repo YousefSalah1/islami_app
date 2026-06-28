@@ -3,16 +3,11 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/utils/app_assets.dart';
-
+import '../hadith/hadith_screen.dart';
+import '../azkar/azkar_screen.dart';
+import '../radio/radio_screen.dart';
+import '../times/times_screen.dart';
 import 'quran_tab.dart';
-
-// Placeholder widgets for other tabs (Day 2)
-class PlaceholderTab extends StatelessWidget {
-  final String title;
-  const PlaceholderTab({super.key, required this.title});
-  @override
-  Widget build(BuildContext context) => Center(child: Text(title, style: TextStyle(color: AppColors.primary, fontSize: 24)));
-}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,12 +19,13 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _tabs = const [
+  // IndexedStack keeps all tabs alive — no reload on switch
+  static const List<Widget> _screens = [
     QuranTab(),
-    PlaceholderTab(title: 'Hadith'),
-    PlaceholderTab(title: 'Sebha'),
-    PlaceholderTab(title: 'Radio'),
-    PlaceholderTab(title: 'Time'),
+    HadithScreen(),
+    AzkarScreen(),
+    RadioScreen(),
+    TimesScreen(),
   ];
 
   @override
@@ -41,7 +37,10 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Image.asset(AppAssets.background, fit: BoxFit.cover),
           ),
           SafeArea(
-            child: _tabs[_selectedIndex],
+            child: IndexedStack(
+              index: _selectedIndex,
+              children: _screens,
+            ),
           ),
         ],
       ),
@@ -49,17 +48,17 @@ class _HomeScreenState extends State<HomeScreen> {
         currentIndex: _selectedIndex,
         onTap: (index) => setState(() => _selectedIndex = index),
         items: [
-          _buildNavItem(AppAssets.quranIcon, AppStrings.quranTab, 0),
-          _buildNavItem(AppAssets.hadithIcon, AppStrings.hadithTab, 1),
-          _buildNavItem(AppAssets.sebhaIcon, AppStrings.sebhaTab, 2),
-          _buildNavItem(AppAssets.radioIcon, AppStrings.radioTab, 3),
-          _buildNavItem(AppAssets.timeIcon, AppStrings.timesTab, 4),
+          _navItem(AppAssets.quranIcon, AppStrings.quranTab, 0),
+          _navItem(AppAssets.hadithIcon, AppStrings.hadithTab, 1),
+          _navItem(AppAssets.sebhaIcon, AppStrings.sebhaTab, 2),
+          _navItem(AppAssets.radioIcon, AppStrings.radioTab, 3),
+          _navItem(AppAssets.timeIcon, AppStrings.timesTab, 4),
         ],
       ),
     );
   }
 
-  BottomNavigationBarItem _buildNavItem(String svgPath, String label, int index) {
+  BottomNavigationBarItem _navItem(String svgPath, String label, int index) {
     final bool isSelected = _selectedIndex == index;
     return BottomNavigationBarItem(
       icon: Container(
