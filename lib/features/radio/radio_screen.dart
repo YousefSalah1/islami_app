@@ -19,10 +19,7 @@ class RadioScreen extends StatelessWidget {
           style: TextStyle(color: AppColors.primary, fontSize: 24, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 4),
-        const Text(
-          'إذاعة القرآن الكريم',
-          style: TextStyle(color: Colors.white70, fontSize: 16),
-        ),
+        const Text('إذاعة القرآن الكريم', style: TextStyle(color: Colors.white70, fontSize: 16)),
         const SizedBox(height: 16),
 
         // Now playing indicator
@@ -32,9 +29,7 @@ class RadioScreen extends StatelessWidget {
         ],
 
         // Station list
-        Expanded(
-          child: _buildBody(context, provider),
-        ),
+        Expanded(child: _buildBody(context, provider)),
       ],
     );
   }
@@ -64,7 +59,10 @@ class RadioScreen extends StatelessWidget {
               onPressed: provider.retry,
               icon: const Icon(Icons.refresh_rounded),
               label: const Text('Retry'),
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: AppColors.black),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.black,
+              ),
             ),
           ],
         ),
@@ -77,11 +75,7 @@ class RadioScreen extends StatelessWidget {
       itemCount: provider.stations.length,
       separatorBuilder: (_, __) => const Divider(color: Colors.white12, height: 1),
       itemBuilder: (context, index) {
-        return _StationTile(
-          station: provider.stations[index],
-          index: index,
-          provider: provider,
-        );
+        return _StationTile(station: provider.stations[index], index: index, provider: provider);
       },
     );
   }
@@ -111,7 +105,14 @@ class _NowPlayingBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text('Now Playing', style: TextStyle(color: Colors.white54, fontSize: 12)),
-                Text(station.name, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(
+                  station.name,
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
               ],
             ),
           ),

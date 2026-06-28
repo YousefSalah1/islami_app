@@ -17,7 +17,9 @@ class AzkarScreen extends StatelessWidget {
     }
 
     if (provider.categories.isEmpty) {
-      return const Center(child: Text('No azkar found', style: TextStyle(color: AppColors.primary)));
+      return const Center(
+        child: Text('No azkar found', style: TextStyle(color: AppColors.primary)),
+      );
     }
 
     return Column(
@@ -80,7 +82,10 @@ class AzkarScreen extends StatelessWidget {
                   provider.reset();
                 },
                 icon: const Icon(Icons.refresh_rounded, size: 16, color: AppColors.primary),
-                label: const Text('Reset', style: TextStyle(color: AppColors.primary, fontSize: 13)),
+                label: const Text(
+                  'Reset',
+                  style: TextStyle(color: AppColors.primary, fontSize: 13),
+                ),
               ),
             ],
           ),
@@ -223,7 +228,11 @@ class _ZikrView extends StatelessWidget {
               ),
               child: const Text(
                 'التالي',
-                style: TextStyle(color: AppColors.primary, fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),

@@ -133,7 +133,11 @@ class _QuranTabState extends State<QuranTab> {
                       children: [
                         Text(
                           _lastReadSurah!.englishName,
-                          style: const TextStyle(color: AppColors.black, fontSize: 16, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            color: AppColors.black,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         Text(
                           '${_lastReadSurah!.versesCount} ${AppStrings.verses}',
@@ -143,7 +147,11 @@ class _QuranTabState extends State<QuranTab> {
                     ),
                     Text(
                       _lastReadSurah!.arabicName,
-                      style: const TextStyle(color: AppColors.black, fontSize: 20, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: AppColors.black,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -187,24 +195,45 @@ class _QuranTabState extends State<QuranTab> {
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            SvgPicture.asset(AppAssets.quranIcon, width: 40, height: 40,
-                                colorFilter: const ColorFilter.mode(AppColors.primary, BlendMode.srcIn)),
+                            SvgPicture.asset(
+                              AppAssets.quranIcon,
+                              width: 40,
+                              height: 40,
+                              colorFilter: const ColorFilter.mode(
+                                AppColors.primary,
+                                BlendMode.srcIn,
+                              ),
+                            ),
                             Text(
                               '${surah.index + 1}',
-                              style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                              style: const TextStyle(
+                                color: AppColors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      title: Text(surah.englishName,
-                          style: const TextStyle(color: AppColors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+                      title: Text(
+                        surah.englishName,
+                        style: const TextStyle(
+                          color: AppColors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       subtitle: Text(
                         '${surah.versesCount} ${AppStrings.verses}',
                         style: const TextStyle(color: Colors.white54, fontSize: 12),
                       ),
                       trailing: Text(
                         surah.arabicName,
-                        style: const TextStyle(color: AppColors.primary, fontSize: 17, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     );
                   },

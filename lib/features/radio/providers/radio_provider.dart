@@ -18,7 +18,8 @@ class RadioProvider extends ChangeNotifier {
     _fetchStations();
     _player.playerStateStream.listen((state) {
       isPlaying = state.playing;
-      isBuffering = state.processingState == ProcessingState.loading ||
+      isBuffering =
+          state.processingState == ProcessingState.loading ||
           state.processingState == ProcessingState.buffering;
       notifyListeners();
     });

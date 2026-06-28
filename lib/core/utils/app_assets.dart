@@ -1,7 +1,7 @@
 class AppAssets {
   static const String _images = 'assets/images/';
   static const String _svg = 'assets/svg/';
-  
+
   // Images
   static const String background = '${_images}background.png';
   static const String bearish = '${_images}bearish.png';

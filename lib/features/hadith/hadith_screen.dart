@@ -114,9 +114,14 @@ class _HadithCard extends StatelessWidget {
                       icon: Icons.copy_rounded,
                       label: 'Copy',
                       onTap: () {
-                        Clipboard.setData(ClipboardData(text: '${hadith.title}\n\n${hadith.content}'));
+                        Clipboard.setData(
+                          ClipboardData(text: '${hadith.title}\n\n${hadith.content}'),
+                        );
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Copied to clipboard'), backgroundColor: AppColors.primary),
+                          const SnackBar(
+                            content: Text('Copied to clipboard'),
+                            backgroundColor: AppColors.primary,
+                          ),
                         );
                       },
                     ),
@@ -157,7 +162,10 @@ class _ActionButton extends StatelessWidget {
           children: [
             Icon(icon, color: AppColors.black, size: 18),
             const SizedBox(width: 6),
-            Text(label, style: const TextStyle(color: AppColors.black, fontWeight: FontWeight.bold)),
+            Text(
+              label,
+              style: const TextStyle(color: AppColors.black, fontWeight: FontWeight.bold),
+            ),
           ],
         ),
       ),

@@ -20,8 +20,8 @@ class PrayerTimesModel {
   });
 
   factory PrayerTimesModel.fromJson(Map<String, dynamic> json, String cityName) {
-    final timings = json['data']['timings'];
-    final dateData = json['data']['date'];
+    final timings = json['data']['timings'] as Map<String, dynamic>;
+    final dateData = json['data']['date'] as Map<String, dynamic>;
     return PrayerTimesModel(
       fajr: timings['Fajr'] ?? '--:--',
       sunrise: timings['Sunrise'] ?? '--:--',
@@ -50,12 +50,17 @@ class PrayerTimesModel {
     for (final entry in prayers.entries) {
       if (currentMinutes < entry.value) return entry.key;
     }
-    return 'Fajr'; // next day
+    return 'Fajr'; // wraps to next day
   }
 
+  // Fixed: operator precedence bug corrected
   int _toMinutes(String time) {
-    final parts = time.split(':');
+    // Strip any extra info after space (e.g. "03:47 (CET)")
+    final clean = time.split(' ').first;
+    final parts = clean.split(':');
     if (parts.length < 2) return 0;
-    return int.tryParse(parts[0]) ?? 0 * 60 + (int.tryParse(parts[1]) ?? 0);
+    final hours = int.tryParse(parts[0]) ?? 0;
+    final minutes = int.tryParse(parts[1]) ?? 0;
+    return hours * 60 + minutes;
   }
 }

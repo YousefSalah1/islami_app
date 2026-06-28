@@ -57,11 +57,7 @@ class HadithDetailScreen extends StatelessWidget {
               ),
               child: Text(
                 hadith.content,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  height: 2.0,
-                ),
+                style: const TextStyle(color: Colors.white, fontSize: 18, height: 2.0),
                 textAlign: TextAlign.center,
               ),
             ),

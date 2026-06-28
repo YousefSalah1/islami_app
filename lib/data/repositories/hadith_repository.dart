@@ -4,14 +4,14 @@ import '../models/hadith_model.dart';
 class HadithRepository {
   Future<List<HadithModel>> loadAllHadith() async {
     List<Future<HadithModel?>> tasks = [];
-    
+
     for (int i = 1; i <= 50; i++) {
       tasks.add(_loadSingleHadith(i));
     }
-    
+
     // Load all in parallel instead of sequentially
     final results = await Future.wait(tasks);
-    
+
     // Filter out nulls and return
     return results.where((element) => element != null).cast<HadithModel>().toList();
   }

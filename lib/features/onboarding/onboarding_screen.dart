@@ -17,30 +17,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _currentPage = 0;
 
   final List<Map<String, String>> _pages = [
-    {
-      "title": "Welcome To Islami App",
-      "body": "",
-      "image": AppAssets.welcome
-    },
+    {"title": "Welcome To Islami App", "body": "", "image": AppAssets.welcome},
     {
       "title": "Welcome To Islami App",
       "body": "We Are Very Excited To Have You In Our Community",
-      "image": AppAssets.kabba
+      "image": AppAssets.kabba,
     },
     {
       "title": "Reading the Quran",
       "body": "Read, and your Lord is the Most Generous",
-      "image": AppAssets.quranSura
+      "image": AppAssets.quranSura,
     },
     {
       "title": "Bearish",
       "body": "Praise the name of your Lord, the Most High",
-      "image": AppAssets.bearish
+      "image": AppAssets.bearish,
     },
     {
       "title": "Holy Quran Radio",
       "body": "You can listen to the Holy Quran Radio through the application for free and easily",
-      "image": AppAssets.radio
+      "image": AppAssets.radio,
     },
   ];
 
@@ -48,9 +44,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('showHome', true);
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
-    );
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
   }
 
   @override
@@ -62,7 +56,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           children: [
             const SizedBox(height: 40),
             // Title replaced by logo if available, or just text
-            Text(AppStrings.appName, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 24)),
+            Text(
+              AppStrings.appName,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 24),
+            ),
             const SizedBox(height: 30),
             Expanded(
               child: PageView.builder(
@@ -78,7 +75,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       const SizedBox(height: 40),
                       Text(
                         page["title"]!,
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primary),
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 15),
@@ -119,14 +120,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   TextButton(
                     onPressed: _finishOnboarding,
-                    child: const Text(AppStrings.skip, style: TextStyle(color: AppColors.primary, fontSize: 17)),
+                    child: const Text(
+                      AppStrings.skip,
+                      style: TextStyle(color: AppColors.primary, fontSize: 17),
+                    ),
                   ),
                   TextButton(
                     onPressed: () {
                       if (_currentPage == _pages.length - 1) {
                         _finishOnboarding();
                       } else {
-                        _controller.nextPage(duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
+                        _controller.nextPage(
+                          duration: const Duration(milliseconds: 400),
+                          curve: Curves.easeInOut,
+                        );
                       }
                     },
                     child: Text(

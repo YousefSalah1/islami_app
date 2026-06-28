@@ -19,7 +19,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  // IndexedStack keeps all tabs alive — no reload on switch
   static const List<Widget> _screens = [
     QuranTab(),
     HadithScreen(),
@@ -33,14 +32,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          Positioned.fill(
-            child: Image.asset(AppAssets.background, fit: BoxFit.cover),
+          // RepaintBoundary: background never repaints during scrolls
+          RepaintBoundary(
+            child: Positioned.fill(child: Image.asset(AppAssets.background, fit: BoxFit.cover)),
           ),
           SafeArea(
-            child: IndexedStack(
-              index: _selectedIndex,
-              children: _screens,
-            ),
+            child: IndexedStack(index: _selectedIndex, children: _screens),
           ),
         ],
       ),
@@ -50,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
         items: [
           _navItem(AppAssets.quranIcon, AppStrings.quranTab, 0),
           _navItem(AppAssets.hadithIcon, AppStrings.hadithTab, 1),
-          _navItem(AppAssets.sebhaIcon, AppStrings.sebhaTab, 2),
+          _navItem(AppAssets.sebhaIcon, AppStrings.azkarTab, 2),
           _navItem(AppAssets.radioIcon, AppStrings.radioTab, 3),
           _navItem(AppAssets.timeIcon, AppStrings.timesTab, 4),
         ],

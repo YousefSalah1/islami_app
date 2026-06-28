@@ -24,8 +24,10 @@ class AppRouter {
         return PageRouteBuilder(
           pageBuilder: (_, __, ___) => SuraDetailsScreen(surah: surah),
           transitionsBuilder: (_, animation, __, child) => SlideTransition(
-            position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
-                .animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+            position: Tween<Offset>(
+              begin: const Offset(1, 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
             child: child,
           ),
           transitionDuration: const Duration(milliseconds: 350),
@@ -35,17 +37,17 @@ class AppRouter {
         return PageRouteBuilder(
           pageBuilder: (_, __, ___) => HadithDetailScreen(hadith: hadith),
           transitionsBuilder: (_, animation, __, child) => SlideTransition(
-            position: Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
-                .animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+            position: Tween<Offset>(
+              begin: const Offset(0, 1),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
             child: child,
           ),
           transitionDuration: const Duration(milliseconds: 350),
         );
       default:
         return MaterialPageRoute(
-          builder: (_) => Scaffold(
-            body: Center(child: Text('No route: ${settings.name}')),
-          ),
+          builder: (_) => Scaffold(body: Center(child: Text('No route: ${settings.name}'))),
         );
     }
   }

@@ -51,13 +51,9 @@ class _TimesScreenState extends State<TimesScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                Expanded(
-                  child: _buildTextField(_cityCtrl, 'City'),
-                ),
+                Expanded(child: _buildTextField(_cityCtrl, 'City')),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: _buildTextField(_countryCtrl, 'Country'),
-                ),
+                Expanded(child: _buildTextField(_countryCtrl, 'Country')),
                 const SizedBox(width: 8),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -127,7 +123,11 @@ class _TimesScreenState extends State<TimesScreen> {
         children: [
           const Icon(Icons.error_outline_rounded, color: AppColors.primary, size: 48),
           const SizedBox(height: 12),
-          Text(provider.errorMessage!, style: const TextStyle(color: Colors.white70), textAlign: TextAlign.center),
+          Text(
+            provider.errorMessage!,
+            style: const TextStyle(color: Colors.white70),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );
@@ -136,10 +136,20 @@ class _TimesScreenState extends State<TimesScreen> {
   Widget _buildPrayerTimes(PrayerTimesModel times) {
     final prayers = [
       {'name': 'Fajr', 'arabic': 'الفجر', 'time': times.fajr, 'icon': Icons.brightness_3_rounded},
-      {'name': 'Sunrise', 'arabic': 'الشروق', 'time': times.sunrise, 'icon': Icons.wb_sunny_rounded},
+      {
+        'name': 'Sunrise',
+        'arabic': 'الشروق',
+        'time': times.sunrise,
+        'icon': Icons.wb_sunny_rounded,
+      },
       {'name': 'Dhuhr', 'arabic': 'الظهر', 'time': times.dhuhr, 'icon': Icons.light_mode_rounded},
       {'name': 'Asr', 'arabic': 'العصر', 'time': times.asr, 'icon': Icons.cloud_rounded},
-      {'name': 'Maghrib', 'arabic': 'المغرب', 'time': times.maghrib, 'icon': Icons.wb_twilight_rounded},
+      {
+        'name': 'Maghrib',
+        'arabic': 'المغرب',
+        'time': times.maghrib,
+        'icon': Icons.wb_twilight_rounded,
+      },
       {'name': 'Isha', 'arabic': 'العشاء', 'time': times.isha, 'icon': Icons.nightlight_round},
     ];
 
@@ -200,7 +210,13 @@ class _PrayerCard extends StatelessWidget {
           width: isHighlighted ? 2 : 1,
         ),
         boxShadow: isHighlighted
-            ? [BoxShadow(color: AppColors.primary.withAlpha(60), blurRadius: 12, offset: const Offset(0, 4))]
+            ? [
+                BoxShadow(
+                  color: AppColors.primary.withAlpha(60),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ]
             : [],
       ),
       child: Row(

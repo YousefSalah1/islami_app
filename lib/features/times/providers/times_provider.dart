@@ -23,10 +23,8 @@ class TimesProvider extends ChangeNotifier {
       final now = DateTime.now();
       final date =
           '${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}';
-      final uri = Uri.parse(
-          'https://api.aladhan.com/v1/timingsByCity/$date?city=$c&country=$co');
-      final response =
-          await http.get(uri).timeout(const Duration(seconds: 10));
+      final uri = Uri.parse('https://api.aladhan.com/v1/timingsByCity/$date?city=$c&country=$co');
+      final response = await http.get(uri).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['code'] == 200) {
@@ -74,15 +72,16 @@ class TimesProvider extends ChangeNotifier {
       }
 
       final position = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(accuracy: LocationAccuracy.low));
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.low),
+      );
 
       final now = DateTime.now();
       final date =
           '${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}';
       final uri = Uri.parse(
-          'https://api.aladhan.com/v1/timings/$date?latitude=${position.latitude}&longitude=${position.longitude}');
-      final response =
-          await http.get(uri).timeout(const Duration(seconds: 10));
+        'https://api.aladhan.com/v1/timings/$date?latitude=${position.latitude}&longitude=${position.longitude}',
+      );
+      final response = await http.get(uri).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

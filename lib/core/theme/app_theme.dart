@@ -10,7 +10,11 @@ class AppTheme {
     textTheme: const TextTheme(
       bodyLarge: TextStyle(color: AppColors.white, fontFamily: AppFonts.janna),
       bodyMedium: TextStyle(color: AppColors.white, fontFamily: AppFonts.janna),
-      titleLarge: TextStyle(color: AppColors.primary, fontFamily: AppFonts.janna, fontWeight: FontWeight.bold),
+      titleLarge: TextStyle(
+        color: AppColors.primary,
+        fontFamily: AppFonts.janna,
+        fontWeight: FontWeight.bold,
+      ),
     ),
     appBarTheme: const AppBarTheme(
       backgroundColor: AppColors.transparent,
