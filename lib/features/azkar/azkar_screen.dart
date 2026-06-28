@@ -14,12 +14,17 @@ class AzkarScreen extends StatelessWidget {
     final provider = context.watch<SebhaProvider>();
 
     if (provider.isLoading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      );
     }
 
     if (provider.categories.isEmpty) {
       return const Center(
-        child: Text('No azkar found', style: TextStyle(color: AppColors.primary)),
+        child: Text(
+          'No azkar found',
+          style: TextStyle(color: AppColors.primary),
+        ),
       );
     }
 
@@ -28,7 +33,11 @@ class AzkarScreen extends StatelessWidget {
         const SizedBox(height: 14),
         const Text(
           'الأذكار',
-          style: TextStyle(color: AppColors.primary, fontSize: 24, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: AppColors.primary,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 10),
 
@@ -46,9 +55,14 @@ class AzkarScreen extends StatelessWidget {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 220),
                   margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: selected ? AppColors.primary : const Color(0xFF2A2A2A),
+                    color: selected
+                        ? AppColors.primary
+                        : const Color(0xFF2A2A2A),
                     borderRadius: BorderRadius.circular(22),
                     border: Border.all(color: AppColors.primary.withAlpha(100)),
                   ),
@@ -56,7 +70,9 @@ class AzkarScreen extends StatelessWidget {
                     provider.categories[index],
                     style: TextStyle(
                       color: selected ? AppColors.black : AppColors.primary,
-                      fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: selected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                       fontSize: 13,
                     ),
                   ),
@@ -80,7 +96,11 @@ class AzkarScreen extends StatelessWidget {
               ),
               TextButton.icon(
                 onPressed: provider.reset,
-                icon: const Icon(Icons.refresh_rounded, size: 15, color: AppColors.primary),
+                icon: const Icon(
+                  Icons.refresh_rounded,
+                  size: 15,
+                  color: AppColors.primary,
+                ),
                 label: const Text(
                   'Reset',
                   style: TextStyle(color: AppColors.primary, fontSize: 12),
@@ -128,7 +148,9 @@ class _ZikrView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress = targetCount > 0 ? (tapCount / targetCount).clamp(0.0, 1.0) : 0.0;
+    final progress = targetCount > 0
+        ? (tapCount / targetCount).clamp(0.0, 1.0)
+        : 0.0;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -197,7 +219,9 @@ class _ZikrView extends StatelessWidget {
                         value: progress,
                         strokeWidth: 7,
                         backgroundColor: Colors.white12,
-                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          AppColors.primary,
+                        ),
                       ),
                     ),
                     Column(
@@ -213,7 +237,10 @@ class _ZikrView extends StatelessWidget {
                         ),
                         Text(
                           '/ $targetCount',
-                          style: const TextStyle(color: Colors.white54, fontSize: 12),
+                          style: const TextStyle(
+                            color: Colors.white54,
+                            fontSize: 12,
+                          ),
                         ),
                       ],
                     ),
@@ -227,7 +254,10 @@ class _ZikrView extends StatelessWidget {
               GestureDetector(
                 onTap: onNext,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.primary.withAlpha(30),
                     borderRadius: BorderRadius.circular(30),

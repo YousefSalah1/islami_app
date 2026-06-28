@@ -41,12 +41,25 @@ class AzkarRepository {
 
   ZikrModel? _parseItem(dynamic item) {
     if (item is! Map<String, dynamic>) return null;
-    final content = item['content'] as String? ?? '';
+    String content = item['content'] as String? ?? '';
     final category = item['category'] as String? ?? '';
-    // Filter out the "stop" sentinel entries
+
+    // Filter out "stop" sentinel entries
     if (content == 'stop' || category == 'stop' || content.isEmpty) {
       return null;
     }
-    return ZikrModel.fromJson(item);
+
+    // Clean literal \n artifacts: the source JSON sometimes contains the
+    // two-character sequence backslash+n which shows on screen as "\n".
+    // Replace with a space, then collapse multiple spaces.
+    content = content.replaceAll(r'\n', ' ').replaceAll('\n', ' ').replaceAll('\r', '').trim();
+    // Collapse runs of whitespace into a single space
+    content = content.replaceAll(RegExp(r'  +'), ' ');
+
+    if (content.isEmpty) return null;
+
+    final cleaned = Map<String, dynamic>.from(item);
+    cleaned['content'] = content;
+    return ZikrModel.fromJson(cleaned);
   }
 }

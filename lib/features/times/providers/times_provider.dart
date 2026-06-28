@@ -2,140 +2,117 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../data/models/prayer_times_model.dart';
 import '../../../data/services/prayer_api_service.dart';
 
-enum TimesStatus { initial, loading, success, error, permissionDenied }
-
-class LocationInfo {
-  final String country;
-  final String city;
-  final String district;
-
-  const LocationInfo({required this.country, required this.city, required this.district});
-}
+enum TimesStatus { initial, loading, success, error }
 
 class TimesProvider extends ChangeNotifier {
-  final PrayerApiService _api = PrayerApiService();
+  final _api = PrayerApiService();
 
   TimesStatus status = TimesStatus.initial;
   PrayerTimesModel? prayerTimes;
-  LocationInfo? locationInfo;
   String? errorMessage;
-  bool hasCachedData = false;
 
-  // Countdown state — updated every second
+  // Currently selected manual location
+  String? selectedCountry;
+  String? selectedCity;
+
+  // Countdown
   Timer? _countdownTimer;
   Duration countdownDuration = Duration.zero;
   String nextPrayerName = '';
 
   TimesProvider() {
-    _tryLoadCache();
+    _init();
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // GPS Flow
+  // Initialise — restore saved location and auto-fetch
   // ─────────────────────────────────────────────────────────────────────────────
 
-  Future<void> fetchByGPS() async {
-    _setLoading();
-
-    try {
-      // 1. Location service
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        _setError('Location services are disabled.\nPlease enable them and try again.');
-        return;
-      }
-
-      // 2. Permission
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        status = TimesStatus.permissionDenied;
-        errorMessage =
-            'Location permission denied.\nPlease allow access or use manual city search.';
-        notifyListeners();
-        return;
-      }
-
-      // 3. Get coordinates
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium),
-      );
-
-      // 4. Reverse geocode
-      String country = '';
-      String city = '';
-      String district = '';
-      try {
-        final placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
-        if (placemarks.isNotEmpty) {
-          final p = placemarks.first;
-          country = p.country ?? '';
-          city = (p.locality?.isNotEmpty == true ? p.locality : p.administrativeArea) ?? '';
-          district = p.subLocality ?? '';
-        }
-      } catch (_) {
-        // Geocoding failure is non-fatal
-      }
-
-      locationInfo = LocationInfo(country: country, city: city, district: district);
-
-      // 5. Fetch prayer times
-      final method = PrayerApiService.methodForCountry(country.isNotEmpty ? country : null);
-      final data = await _api.getTimingsByCoordinates(
-        latitude: position.latitude,
-        longitude: position.longitude,
-        method: method,
-      );
-
-      final label = city.isNotEmpty ? city : 'Your Location';
-      prayerTimes = PrayerTimesModel.fromJson(data, label);
-      await _cache(data, label);
-      _startCountdown();
-      status = TimesStatus.success;
-    } catch (e) {
-      // Try cache fallback
-      if (prayerTimes != null) {
-        status = TimesStatus.success;
-        errorMessage = 'Using cached data (offline mode)';
-      } else {
-        _setError('Failed to get prayer times.\nCheck your internet connection.');
-      }
+  Future<void> _init() async {
+    await _restoreLocation();
+    if (selectedCountry != null && selectedCity != null) {
+      await fetchByCity(country: selectedCountry!, city: selectedCity!, fromInit: true);
+    } else {
+      await _tryLoadCache();
     }
-    notifyListeners();
+  }
+
+  Future<void> _restoreLocation() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      selectedCountry = prefs.getString('pref_country');
+      selectedCity = prefs.getString('pref_city');
+    } catch (_) {}
+  }
+
+  Future<void> _saveLocation(String country, String city) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('pref_country', country);
+      await prefs.setString('pref_city', city);
+    } catch (_) {}
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // Manual City Flow
+  // Fetch
   // ─────────────────────────────────────────────────────────────────────────────
 
-  Future<void> fetchByCity({required String city, required String country}) async {
-    _setLoading();
+  Future<void> fetchByCity({
+    required String country,
+    required String city,
+    bool fromInit = false,
+  }) async {
+    if (!fromInit) {
+      status = TimesStatus.loading;
+      errorMessage = null;
+      notifyListeners();
+    } else if (status != TimesStatus.success) {
+      status = TimesStatus.loading;
+      notifyListeners();
+    }
+
     try {
       final data = await _api.getTimingsByCity(city: city, country: country);
-      locationInfo = LocationInfo(country: country, city: city, district: '');
+      selectedCountry = country;
+      selectedCity = city;
       prayerTimes = PrayerTimesModel.fromJson(data, city);
+      await _saveLocation(country, city);
       await _cache(data, city);
       _startCountdown();
       status = TimesStatus.success;
+      errorMessage = null;
     } catch (_) {
-      if (prayerTimes != null) {
+      final cached = await _loadCache();
+      if (cached != null) {
+        prayerTimes = cached;
+        _startCountdown();
         status = TimesStatus.success;
-        errorMessage = 'Using cached data — could not update.';
+        errorMessage = 'Using cached data — check your connection.';
       } else {
-        _setError('City not found or no internet.\nCheck spelling and try again.');
+        status = TimesStatus.error;
+        errorMessage = 'Could not fetch prayer times.\nCheck your internet connection.';
       }
     }
     notifyListeners();
+  }
+
+  /// Called when user picks a new country — resets city selection.
+  void selectCountry(String country) {
+    if (selectedCountry == country) return;
+    selectedCountry = country;
+    selectedCity = null;
+    notifyListeners();
+  }
+
+  /// Called when user picks a new city — auto-fetches.
+  Future<void> selectCity(String city) async {
+    if (selectedCountry == null) return;
+    await fetchByCity(country: selectedCountry!, city: city);
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -155,7 +132,6 @@ class TimesProvider extends ChangeNotifier {
     nextPrayerName = next;
 
     DateTime nextTime = prayerTimes!.prayerAsDateTime(_timeForName(next));
-    // If next prayer is Fajr and it has already passed today → tomorrow
     if (nextTime.isBefore(now)) {
       nextTime = nextTime.add(const Duration(days: 1));
     }
@@ -163,17 +139,14 @@ class TimesProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  String _timeForName(String name) {
-    if (prayerTimes == null) return '00:00';
-    return switch (name) {
-      'Fajr' => prayerTimes!.fajr,
-      'Dhuhr' => prayerTimes!.dhuhr,
-      'Asr' => prayerTimes!.asr,
-      'Maghrib' => prayerTimes!.maghrib,
-      'Isha' => prayerTimes!.isha,
-      _ => prayerTimes!.fajr,
-    };
-  }
+  String _timeForName(String name) => switch (name) {
+    'Fajr' => prayerTimes!.fajr,
+    'Dhuhr' => prayerTimes!.dhuhr,
+    'Asr' => prayerTimes!.asr,
+    'Maghrib' => prayerTimes!.maghrib,
+    'Isha' => prayerTimes!.isha,
+    _ => prayerTimes!.fajr,
+  };
 
   String get countdownString {
     final h = countdownDuration.inHours;
@@ -196,36 +169,29 @@ class TimesProvider extends ChangeNotifier {
     } catch (_) {}
   }
 
-  Future<void> _tryLoadCache() async {
+  Future<PrayerTimesModel?> _loadCache() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString('prayer_cache_data');
       final city = prefs.getString('prayer_cache_city') ?? '';
       if (raw != null) {
-        final data = jsonDecode(raw) as Map<String, dynamic>;
-        prayerTimes = PrayerTimesModel.fromJson(data, city);
-        hasCachedData = true;
-        _startCountdown();
-        notifyListeners();
+        return PrayerTimesModel.fromJson(jsonDecode(raw) as Map<String, dynamic>, city);
       }
     } catch (_) {}
+    return null;
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Helpers
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  void _setLoading() {
-    status = TimesStatus.loading;
-    errorMessage = null;
-    notifyListeners();
+  Future<void> _tryLoadCache() async {
+    final cached = await _loadCache();
+    if (cached != null && mounted) {
+      prayerTimes = cached;
+      _startCountdown();
+      notifyListeners();
+    }
   }
 
-  void _setError(String message) {
-    status = TimesStatus.error;
-    errorMessage = message;
-    notifyListeners();
-  }
+  bool get mounted => !_disposed;
+  bool _disposed = false;
 
   void reset() {
     status = TimesStatus.initial;
@@ -235,6 +201,7 @@ class TimesProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     _countdownTimer?.cancel();
     super.dispose();
   }

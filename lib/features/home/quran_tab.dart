@@ -67,14 +67,14 @@ class _QuranTabState extends State<QuranTab> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Center(
-          child: Text(
-            AppStrings.appName,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 24),
+          child: SvgPicture.asset(
+            AppAssets.logoTop,
+            height: 52,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
 
         // Search bar (fixed: uses Icon instead of broken SVG Image.asset)
         Padding(
@@ -178,7 +178,7 @@ class _QuranTabState extends State<QuranTab> {
                 )
               : ListView.separated(
                   physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   itemCount: _filteredSurahs.length,
                   separatorBuilder: (_, __) => const Divider(color: Colors.white12, height: 1),
                   itemBuilder: (context, index) {
@@ -196,20 +196,16 @@ class _QuranTabState extends State<QuranTab> {
                           alignment: Alignment.center,
                           children: [
                             SvgPicture.asset(
-                              AppAssets.quranIcon,
-                              width: 40,
-                              height: 40,
-                              colorFilter: const ColorFilter.mode(
-                                AppColors.primary,
-                                BlendMode.srcIn,
-                              ),
+                              AppAssets.suraNum,
+                              width: 44,
+                              height: 44,
                             ),
                             Text(
                               '${surah.index + 1}',
                               style: const TextStyle(
                                 color: AppColors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 12,
+                                fontSize: 13,
                               ),
                             ),
                           ],

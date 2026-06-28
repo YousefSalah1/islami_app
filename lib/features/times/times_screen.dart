@@ -1,163 +1,181 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/utils/app_assets.dart';
+import '../../data/local/countries_cities.dart';
 import '../../data/models/prayer_times_model.dart';
 import 'providers/times_provider.dart';
 
-class TimesScreen extends StatefulWidget {
+class TimesScreen extends StatelessWidget {
   const TimesScreen({super.key});
-
-  @override
-  State<TimesScreen> createState() => _TimesScreenState();
-}
-
-class _TimesScreenState extends State<TimesScreen> {
-  final _cityCtrl = TextEditingController();
-  final _countryCtrl = TextEditingController();
-
-  @override
-  void dispose() {
-    _cityCtrl.dispose();
-    _countryCtrl.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<TimesProvider>();
 
     return LayoutBuilder(
-      builder: (context, constraints) {
-        return switch (provider.status) {
-          TimesStatus.initial => _buildInitial(context, provider, constraints),
-          TimesStatus.loading => _buildLoading(),
-          TimesStatus.success => _buildSuccess(context, provider, constraints),
-          TimesStatus.error => _buildError(context, provider, constraints),
-          TimesStatus.permissionDenied => _buildManual(context, provider, constraints),
-        };
+      builder: (context, constraints) => switch (provider.status) {
+        TimesStatus.initial => _InitialView(
+          provider: provider,
+          constraints: constraints,
+        ),
+        TimesStatus.loading => const _LoadingView(),
+        TimesStatus.success => _SuccessView(
+          provider: provider,
+          constraints: constraints,
+        ),
+        TimesStatus.error => _ErrorView(
+          provider: provider,
+          constraints: constraints,
+        ),
       },
     );
   }
+}
 
-  // ── Initial: GPS button + cached preview ──────────────────────────────────
-  Widget _buildInitial(BuildContext context, TimesProvider provider, BoxConstraints c) {
+// ─────────────────────────────────────────────────────────────────────────────
+// Initial — no location saved yet
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _InitialView extends StatelessWidget {
+  final TimesProvider provider;
+  final BoxConstraints constraints;
+  const _InitialView({required this.provider, required this.constraints});
+
+  @override
+  Widget build(BuildContext context) {
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: EdgeInsets.symmetric(horizontal: 24, vertical: c.maxHeight * 0.06),
+      padding: EdgeInsets.symmetric(
+        horizontal: 24,
+        vertical: constraints.maxHeight * 0.06,
+      ),
       child: Column(
         children: [
           const Text(
             'مواقيت الصلاة',
-            style: TextStyle(color: AppColors.primary, fontSize: 28, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          const Text('Prayer Times', style: TextStyle(color: Colors.white60, fontSize: 16)),
-          SizedBox(height: c.maxHeight * 0.05),
-          const Icon(Icons.mosque_rounded, color: AppColors.primary, size: 80),
-          SizedBox(height: c.maxHeight * 0.05),
-          _GpsButton(onTap: provider.fetchByGPS),
-          const SizedBox(height: 14),
-          TextButton.icon(
-            onPressed: () => _showManualSheet(context, provider),
-            icon: const Icon(Icons.edit_location_alt_rounded, color: Colors.white54, size: 18),
-            label: const Text(
-              'Enter city manually',
-              style: TextStyle(color: Colors.white54, fontSize: 13),
+            style: TextStyle(
+              color: AppColors.primary,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          if (provider.hasCachedData && provider.prayerTimes != null) ...[
-            const SizedBox(height: 20),
-            const Divider(color: Colors.white12),
-            const SizedBox(height: 8),
-            const Text('Last saved times', style: TextStyle(color: Colors.white38, fontSize: 12)),
-            const SizedBox(height: 8),
-            _CompactPrayerRow(times: provider.prayerTimes!),
-          ],
+          const SizedBox(height: 4),
+          const Text(
+            'Prayer Times',
+            style: TextStyle(color: Colors.white60, fontSize: 16),
+          ),
+          SizedBox(height: constraints.maxHeight * 0.06),
+          const Icon(Icons.mosque_rounded, color: AppColors.primary, size: 80),
+          SizedBox(height: constraints.maxHeight * 0.06),
+          const Text(
+            'Select your country and city to get prayer times',
+            style: TextStyle(color: Colors.white54, fontSize: 13),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          _LocationSelector(provider: provider),
         ],
       ),
     );
   }
+}
 
-  // ── Loading ────────────────────────────────────────────────────────────────
-  Widget _buildLoading() {
+// ─────────────────────────────────────────────────────────────────────────────
+// Loading
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _LoadingView extends StatelessWidget {
+  const _LoadingView();
+
+  @override
+  Widget build(BuildContext context) {
     return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CircularProgressIndicator(color: AppColors.primary),
           SizedBox(height: 16),
-          Text('Getting your location...', style: TextStyle(color: Colors.white60, fontSize: 14)),
+          Text(
+            'Getting prayer times...',
+            style: TextStyle(color: Colors.white60, fontSize: 14),
+          ),
         ],
       ),
     );
   }
+}
 
-  // ── Success ────────────────────────────────────────────────────────────────
-  Widget _buildSuccess(BuildContext context, TimesProvider provider, BoxConstraints c) {
+// ─────────────────────────────────────────────────────────────────────────────
+// Success
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _SuccessView extends StatelessWidget {
+  final TimesProvider provider;
+  final BoxConstraints constraints;
+  const _SuccessView({required this.provider, required this.constraints});
+
+  @override
+  Widget build(BuildContext context) {
     final times = provider.prayerTimes!;
-    final loc = provider.locationInfo;
+    final country = provider.selectedCountry ?? '';
+    final city = provider.selectedCity ?? times.city;
 
-    // Build location label
-    final locationParts = <String>[];
-    if (loc?.district.isNotEmpty == true) locationParts.add(loc!.district);
-    if (loc?.city.isNotEmpty == true) locationParts.add(loc!.city);
-    if (loc?.country.isNotEmpty == true) locationParts.add(loc!.country);
-    final locationLabel = locationParts.isNotEmpty ? locationParts.join(', ') : times.city;
-
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Column(
-        children: [
-          // ── Location card ──────────────────────────────────
-          _InfoCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.location_on_rounded, color: AppColors.primary, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        locationLabel,
+    return Center(
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SvgPicture.asset(AppAssets.logoTop, height: 52),
+            const SizedBox(height: 20),
+            // ── Location card ──────────────────────────────────
+            _InfoCard(
+              child: Row(
+                children: [
+                const Icon(
+                  Icons.location_on_rounded,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        city.isNotEmpty ? '$city, $country' : country,
                         style: const TextStyle(
                           color: AppColors.primary,
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
                         ),
-                        overflow: TextOverflow.ellipsis,
                         maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    GestureDetector(
-                      onTap: provider.fetchByGPS,
-                      child: const Icon(Icons.refresh_rounded, color: Colors.white38, size: 18),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Padding(
-                  padding: const EdgeInsets.only(left: 28),
-                  child: Text(
-                    '${times.weekday}  •  ${times.gregorianReadable}',
-                    style: const TextStyle(color: Colors.white54, fontSize: 12),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Padding(
-                  padding: const EdgeInsets.only(left: 28),
-                  child: Text(
-                    times.hijriDateString,
-                    style: const TextStyle(
-                      color: Colors.white38,
-                      fontSize: 13,
-                      fontFamily: 'JannaLT',
-                    ),
-                    textDirection: TextDirection.rtl,
-                    overflow: TextOverflow.ellipsis,
+                      const SizedBox(height: 2),
+                      Text(
+                        '${times.weekday}  •  ${times.gregorianReadable}',
+                        style: const TextStyle(
+                          color: Colors.white54,
+                          fontSize: 12,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        times.hijriDateString,
+                        style: const TextStyle(
+                          color: Colors.white38,
+                          fontSize: 12,
+                          fontFamily: 'JannaLT',
+                        ),
+                        textDirection: TextDirection.rtl,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -165,13 +183,17 @@ class _TimesScreenState extends State<TimesScreen> {
           ),
           const SizedBox(height: 10),
 
-          // ── Countdown card ─────────────────────────────────
+          // ── Countdown ──────────────────────────────────────
           _InfoCard(
             color: AppColors.primary.withAlpha(20),
             borderColor: AppColors.primary.withAlpha(80),
             child: Row(
               children: [
-                const Icon(Icons.timer_rounded, color: AppColors.primary, size: 24),
+                const Icon(
+                  Icons.timer_rounded,
+                  color: AppColors.primary,
+                  size: 24,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -208,79 +230,123 @@ class _TimesScreenState extends State<TimesScreen> {
           const SizedBox(height: 10),
 
           // ── Prayer cards ───────────────────────────────────
-          ..._buildPrayerCards(times),
+          ..._buildCards(times),
           const SizedBox(height: 8),
 
-          // ── Actions ────────────────────────────────────────
+          // ── Change country / city buttons ──────────────────
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              TextButton.icon(
-                onPressed: provider.fetchByGPS,
-                icon: const Icon(Icons.gps_fixed_rounded, color: AppColors.primary, size: 16),
-                label: const Text(
-                  'Use GPS',
-                  style: TextStyle(color: AppColors.primary, fontSize: 13),
+              Expanded(
+                child: _ChangeButton(
+                  icon: Icons.public_rounded,
+                  label: 'Change Country',
+                  onTap: () => _showCountryPicker(context, provider),
                 ),
               ),
-              const Text('•', style: TextStyle(color: Colors.white38)),
-              TextButton.icon(
-                onPressed: () => _showManualSheet(context, provider),
-                icon: const Icon(Icons.edit_rounded, color: Colors.white54, size: 16),
-                label: const Text(
-                  'Change city',
-                  style: TextStyle(color: Colors.white54, fontSize: 13),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _ChangeButton(
+                  icon: Icons.location_city_rounded,
+                  label: 'Change City',
+                  onTap: () => _showCityPicker(context, provider),
                 ),
               ),
             ],
           ),
-          if (provider.errorMessage != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Text(
-                provider.errorMessage!,
-                style: const TextStyle(color: Colors.orange, fontSize: 12),
-                textAlign: TextAlign.center,
-              ),
+
+          if (provider.errorMessage != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              provider.errorMessage!,
+              style: const TextStyle(color: Colors.orange, fontSize: 11),
+              textAlign: TextAlign.center,
             ),
-          const SizedBox(height: 8),
+          ],
+          const SizedBox(height: 4),
         ],
+      ),
       ),
     );
   }
 
-  List<Widget> _buildPrayerCards(PrayerTimesModel times) {
+  List<Widget> _buildCards(PrayerTimesModel times) {
     final current = times.currentPrayer;
     final next = times.nextPrayer;
-
-    final prayers = [
-      (name: 'Fajr', ar: 'الفجر', time: times.fajr, icon: Icons.brightness_3_rounded),
-      (name: 'Sunrise', ar: 'الشروق', time: times.sunrise, icon: Icons.wb_sunny_rounded),
-      (name: 'Dhuhr', ar: 'الظهر', time: times.dhuhr, icon: Icons.light_mode_rounded),
-      (name: 'Asr', ar: 'العصر', time: times.asr, icon: Icons.cloud_rounded),
-      (name: 'Maghrib', ar: 'المغرب', time: times.maghrib, icon: Icons.wb_twilight_rounded),
-      (name: 'Isha', ar: 'العشاء', time: times.isha, icon: Icons.nightlight_round),
-    ];
-
-    return prayers.map((p) {
-      return _PrayerCard(
-        name: p.name,
-        arabic: p.ar,
-        time: p.time,
-        icon: p.icon,
-        isCurrent: p.name == current,
-        isNext: p.name == next,
-      );
-    }).toList();
+    return [
+          (
+            name: 'Fajr',
+            ar: 'الفجر',
+            time: times.fajr,
+            icon: Icons.brightness_3_rounded,
+          ),
+          (
+            name: 'Sunrise',
+            ar: 'الشروق',
+            time: times.sunrise,
+            icon: Icons.wb_sunny_rounded,
+          ),
+          (
+            name: 'Dhuhr',
+            ar: 'الظهر',
+            time: times.dhuhr,
+            icon: Icons.light_mode_rounded,
+          ),
+          (
+            name: 'Asr',
+            ar: 'العصر',
+            time: times.asr,
+            icon: Icons.cloud_rounded,
+          ),
+          (
+            name: 'Maghrib',
+            ar: 'المغرب',
+            time: times.maghrib,
+            icon: Icons.wb_twilight_rounded,
+          ),
+          (
+            name: 'Isha',
+            ar: 'العشاء',
+            time: times.isha,
+            icon: Icons.nightlight_round,
+          ),
+        ]
+        .map(
+          (p) => _PrayerCard(
+            name: p.name,
+            arabic: p.ar,
+            time: p.time,
+            icon: p.icon,
+            isCurrent: p.name == current,
+            isNext: p.name == next,
+          ),
+        )
+        .toList();
   }
+}
 
-  // ── Error ──────────────────────────────────────────────────────────────────
-  Widget _buildError(BuildContext context, TimesProvider provider, BoxConstraints c) {
+// ─────────────────────────────────────────────────────────────────────────────
+// Error
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ErrorView extends StatelessWidget {
+  final TimesProvider provider;
+  final BoxConstraints constraints;
+  const _ErrorView({required this.provider, required this.constraints});
+
+  @override
+  Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(horizontal: 32, vertical: c.maxHeight * 0.08),
+      padding: EdgeInsets.symmetric(
+        horizontal: 32,
+        vertical: constraints.maxHeight * 0.07,
+      ),
       child: Column(
         children: [
-          const Icon(Icons.error_outline_rounded, color: AppColors.primary, size: 56),
+          const Icon(
+            Icons.error_outline_rounded,
+            color: AppColors.primary,
+            size: 56,
+          ),
           const SizedBox(height: 16),
           Text(
             provider.errorMessage ?? 'Something went wrong.',
@@ -288,190 +354,522 @@ class _TimesScreenState extends State<TimesScreen> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
-          _GpsButton(onTap: provider.fetchByGPS),
-          const SizedBox(height: 12),
-          TextButton(
-            onPressed: () => _showManualSheet(context, provider),
-            child: const Text('Enter city manually', style: TextStyle(color: Colors.white54)),
-          ),
-          TextButton(
-            onPressed: provider.reset,
-            child: const Text('Go back', style: TextStyle(color: Colors.white38, fontSize: 12)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Permission denied → manual entry ──────────────────────────────────────
-  Widget _buildManual(BuildContext context, TimesProvider provider, BoxConstraints c) {
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      padding: EdgeInsets.only(
-        left: 24,
-        right: 24,
-        top: c.maxHeight * 0.05,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Center(child: Icon(Icons.location_off_rounded, color: AppColors.primary, size: 56)),
-          const SizedBox(height: 14),
-          Center(
-            child: Text(
-              provider.errorMessage ?? 'Location permission denied.',
-              style: const TextStyle(color: Colors.white70, fontSize: 14),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: 28),
-          const Text(
-            'Enter Location Manually',
-            style: TextStyle(color: AppColors.primary, fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          _InputField(ctrl: _cityCtrl, hint: 'City (e.g. Cairo)'),
-          const SizedBox(height: 10),
-          _InputField(ctrl: _countryCtrl, hint: 'Country (e.g. Egypt)'),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.black,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: () {
-                final city = _cityCtrl.text.trim();
-                final country = _countryCtrl.text.trim();
-                if (city.isEmpty || country.isEmpty) return;
-                provider.fetchByCity(city: city, country: country);
-              },
-              child: const Text(
-                'Get Prayer Times',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Center(
-            child: TextButton.icon(
-              onPressed: provider.fetchByGPS,
-              icon: const Icon(Icons.gps_fixed_rounded, color: AppColors.primary, size: 16),
-              label: const Text('Try GPS again', style: TextStyle(color: AppColors.primary)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Manual bottom sheet ────────────────────────────────────────────────────
-  void _showManualSheet(BuildContext context, TimesProvider provider) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF1E1E1E),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      isScrollControlled: true,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          left: 24,
-          right: 24,
-          top: 24,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Enter Location',
-              style: TextStyle(color: AppColors.primary, fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            _InputField(ctrl: _cityCtrl, hint: 'City (e.g. Cairo)'),
-            const SizedBox(height: 10),
-            _InputField(ctrl: _countryCtrl, hint: 'Country (e.g. Egypt)'),
-            const SizedBox(height: 16),
+          // Retry with same location
+          if (provider.selectedCountry != null && provider.selectedCity != null)
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: AppColors.black,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                onPressed: () {
-                  final city = _cityCtrl.text.trim();
-                  final country = _countryCtrl.text.trim();
-                  if (city.isEmpty || country.isEmpty) return;
-                  Navigator.pop(ctx);
-                  provider.fetchByCity(city: city, country: country);
-                },
-                child: const Text(
-                  'Get Prayer Times',
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text(
+                  'Retry',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                 ),
+                onPressed: () => provider.fetchByCity(
+                  country: provider.selectedCountry!,
+                  city: provider.selectedCity!,
+                ),
               ),
+            ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                side: const BorderSide(color: AppColors.primary),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              icon: const Icon(Icons.edit_location_alt_rounded),
+              label: const Text(
+                'Change Location',
+                style: TextStyle(fontSize: 15),
+              ),
+              onPressed: () => _showLocationSheet(context, provider),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Location selector (used in Initial view)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _LocationSelector extends StatelessWidget {
+  final TimesProvider provider;
+  const _LocationSelector({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _PickerTile(
+          icon: Icons.public_rounded,
+          label: provider.selectedCountry ?? 'Select Country',
+          isSelected: provider.selectedCountry != null,
+          onTap: () => _showCountryPicker(context, provider),
+        ),
+        const SizedBox(height: 10),
+        if (provider.selectedCountry != null)
+          _PickerTile(
+            icon: Icons.location_city_rounded,
+            label: provider.selectedCity ?? 'Select City',
+            isSelected: provider.selectedCity != null,
+            onTap: () => _showCityPicker(context, provider),
+          ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Pickers
+// ─────────────────────────────────────────────────────────────────────────────
+
+void _showCountryPicker(BuildContext context, TimesProvider provider) {
+  _showPickerSheet(
+    context: context,
+    title: 'Select Country',
+    items: kCountries,
+    selected: provider.selectedCountry,
+    onSelected: (country) {
+      provider.selectCountry(country);
+      // If city was previously set for a different country, show city picker
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _showCityPicker(context, provider),
+      );
+    },
+  );
+}
+
+void _showCityPicker(BuildContext context, TimesProvider provider) {
+  if (provider.selectedCountry == null) return;
+  final cities = kCountriesCities[provider.selectedCountry] ?? [];
+  _showPickerSheet(
+    context: context,
+    title: provider.selectedCountry!,
+    items: cities,
+    selected: provider.selectedCity,
+    onSelected: (city) => provider.selectCity(city),
+  );
+}
+
+void _showLocationSheet(BuildContext context, TimesProvider provider) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => _LocationPickerSheet(provider: provider),
+  );
+}
+
+void _showPickerSheet({
+  required BuildContext context,
+  required String title,
+  required List<String> items,
+  required String? selected,
+  required ValueChanged<String> onSelected,
+}) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => _SearchablePickerSheet(
+      title: title,
+      items: items,
+      selected: selected,
+      onSelected: onSelected,
+    ),
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Searchable picker bottom sheet
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _SearchablePickerSheet extends StatefulWidget {
+  final String title;
+  final List<String> items;
+  final String? selected;
+  final ValueChanged<String> onSelected;
+
+  const _SearchablePickerSheet({
+    required this.title,
+    required this.items,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  State<_SearchablePickerSheet> createState() => _SearchablePickerSheetState();
+}
+
+class _SearchablePickerSheetState extends State<_SearchablePickerSheet> {
+  final _ctrl = TextEditingController();
+  String _query = '';
+
+  List<String> get _filtered => _query.isEmpty
+      ? widget.items
+      : widget.items.where((i) => i.toLowerCase().contains(_query)).toList();
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.72,
+      maxChildSize: 0.92,
+      minChildSize: 0.4,
+      expand: false,
+      builder: (ctx, scrollCtrl) => Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF1E1E1E),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                margin: const EdgeInsets.symmetric(vertical: 10),
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            // Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 8, 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.title,
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(color: Colors.white54),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Search
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2A2A2A),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: TextField(
+                  controller: _ctrl,
+                  style: const TextStyle(color: Colors.white),
+                  cursorColor: AppColors.primary,
+                  onChanged: (v) =>
+                      setState(() => _query = v.toLowerCase().trim()),
+                  decoration: const InputDecoration(
+                    hintText: 'Search...',
+                    hintStyle: TextStyle(color: Colors.white38),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+            ),
+            const Divider(color: Colors.white12, height: 1),
+            // List
+            Expanded(
+              child: _filtered.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No results',
+                        style: TextStyle(color: Colors.white38),
+                      ),
+                    )
+                  : ListView.separated(
+                      controller: scrollCtrl,
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: _filtered.length,
+                      separatorBuilder: (_, __) =>
+                          const Divider(color: Colors.white10, height: 1),
+                      itemBuilder: (_, i) {
+                        final item = _filtered[i];
+                        final isSelected = item == widget.selected;
+                        return ListTile(
+                          title: Text(
+                            item,
+                            style: TextStyle(
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : Colors.white,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                          trailing: isSelected
+                              ? const Icon(
+                                  Icons.check_rounded,
+                                  color: AppColors.primary,
+                                )
+                              : null,
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            widget.onSelected(item);
+                          },
+                        );
+                      },
+                    ),
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  String _arabicName(String name) => switch (name) {
-    'Fajr' => 'الفجر',
-    'Sunrise' => 'الشروق',
-    'Dhuhr' => 'الظهر',
-    'Asr' => 'العصر',
-    'Maghrib' => 'المغرب',
-    'Isha' => 'العشاء',
-    _ => name,
-  };
+// Combined location picker (from error state)
+class _LocationPickerSheet extends StatefulWidget {
+  final TimesProvider provider;
+  const _LocationPickerSheet({required this.provider});
+
+  @override
+  State<_LocationPickerSheet> createState() => _LocationPickerSheetState();
+}
+
+class _LocationPickerSheetState extends State<_LocationPickerSheet> {
+  String? _country;
+  String? _city;
+  String _query = '';
+  final _ctrl = TextEditingController();
+  bool _onCityStep = false;
+
+  List<String> get _countryList => _query.isEmpty
+      ? kCountries
+      : kCountries.where((c) => c.toLowerCase().contains(_query)).toList();
+
+  List<String> get _cityList => kCountriesCities[_country] ?? [];
+
+  @override
+  void initState() {
+    super.initState();
+    _country = widget.provider.selectedCountry;
+    _city = widget.provider.selectedCity;
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.75,
+      maxChildSize: 0.92,
+      minChildSize: 0.4,
+      expand: false,
+      builder: (ctx, scrollCtrl) => Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF1E1E1E),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            Center(
+              child: Container(
+                margin: const EdgeInsets.symmetric(vertical: 10),
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 10),
+              child: Row(
+                children: [
+                  if (_onCityStep)
+                    IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back_rounded,
+                        color: AppColors.primary,
+                      ),
+                      onPressed: () => setState(() {
+                        _onCityStep = false;
+                        _city = null;
+                        _query = '';
+                        _ctrl.clear();
+                      }),
+                    ),
+                  Expanded(
+                    child: Text(
+                      _onCityStep ? _country! : 'Select Location',
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(color: Colors.white54),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2A2A2A),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: TextField(
+                  controller: _ctrl,
+                  style: const TextStyle(color: Colors.white),
+                  cursorColor: AppColors.primary,
+                  onChanged: (v) =>
+                      setState(() => _query = v.toLowerCase().trim()),
+                  decoration: const InputDecoration(
+                    hintText: 'Search...',
+                    hintStyle: TextStyle(color: Colors.white38),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+            ),
+            const Divider(color: Colors.white12, height: 1),
+            Expanded(
+              child: _onCityStep
+                  ? ListView.separated(
+                      controller: scrollCtrl,
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: _cityList.length,
+                      separatorBuilder: (_, __) =>
+                          const Divider(color: Colors.white10, height: 1),
+                      itemBuilder: (_, i) {
+                        final city = _cityList[i];
+                        return ListTile(
+                          title: Text(
+                            city,
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                          trailing: city == _city
+                              ? const Icon(
+                                  Icons.check_rounded,
+                                  color: AppColors.primary,
+                                )
+                              : null,
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            widget.provider.fetchByCity(
+                              country: _country!,
+                              city: city,
+                            );
+                          },
+                        );
+                      },
+                    )
+                  : ListView.separated(
+                      controller: scrollCtrl,
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: _countryList.length,
+                      separatorBuilder: (_, __) =>
+                          const Divider(color: Colors.white10, height: 1),
+                      itemBuilder: (_, i) {
+                        final country = _countryList[i];
+                        return ListTile(
+                          title: Text(
+                            country,
+                            style: TextStyle(
+                              color: country == _country
+                                  ? AppColors.primary
+                                  : Colors.white,
+                              fontWeight: country == _country
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                          trailing: country == _country
+                              ? const Icon(
+                                  Icons.check_rounded,
+                                  color: AppColors.primary,
+                                )
+                              : null,
+                          onTap: () => setState(() {
+                            _country = country;
+                            _city = null;
+                            _onCityStep = true;
+                            _query = '';
+                            _ctrl.clear();
+                          }),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Reusable sub-widgets
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _GpsButton extends StatelessWidget {
-  final VoidCallback onTap;
-  const _GpsButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.black,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        ),
-        icon: const Icon(Icons.gps_fixed_rounded, size: 22),
-        label: const Text(
-          'Use My GPS',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        onPressed: onTap,
-      ),
-    );
-  }
-}
-
 class _InfoCard extends StatelessWidget {
   final Widget child;
   final Color? color;
   final Color? borderColor;
-
   const _InfoCard({required this.child, this.color, this.borderColor});
 
   @override
@@ -511,7 +909,7 @@ class _PrayerCard extends StatelessWidget {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
       decoration: BoxDecoration(
         color: isCurrent ? AppColors.primary : const Color(0xFF1E1E1E),
         borderRadius: BorderRadius.circular(14),
@@ -535,7 +933,11 @@ class _PrayerCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(icon, color: isCurrent ? AppColors.black : AppColors.primary, size: 22),
+          Icon(
+            icon,
+            color: isCurrent ? AppColors.black : AppColors.primary,
+            size: 22,
+          ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -545,14 +947,16 @@ class _PrayerCard extends StatelessWidget {
                   arabic,
                   style: TextStyle(
                     color: isCurrent ? AppColors.black : AppColors.primary,
-                    fontSize: 17,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 Text(
                   name,
                   style: TextStyle(
-                    color: isCurrent ? AppColors.black.withAlpha(160) : Colors.white54,
+                    color: isCurrent
+                        ? AppColors.black.withAlpha(150)
+                        : Colors.white54,
                     fontSize: 11,
                   ),
                 ),
@@ -560,15 +964,19 @@ class _PrayerCard extends StatelessWidget {
             ),
           ),
           if (isCurrent)
-            _Badge(label: 'Now', bg: AppColors.black.withAlpha(40), fg: AppColors.black),
+            _Badge(
+              label: 'Now',
+              bg: AppColors.black.withAlpha(40),
+              fg: AppColors.black,
+            ),
           if (isNext && !isCurrent)
             _Badge(
               label: 'Next',
               bg: AppColors.primary.withAlpha(30),
               fg: AppColors.primary,
-              borderColor: AppColors.primary.withAlpha(80),
+              border: AppColors.primary.withAlpha(80),
             ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 4),
           Text(
             time,
             style: TextStyle(
@@ -587,19 +995,23 @@ class _Badge extends StatelessWidget {
   final String label;
   final Color bg;
   final Color fg;
-  final Color? borderColor;
-
-  const _Badge({required this.label, required this.bg, required this.fg, this.borderColor});
+  final Color? border;
+  const _Badge({
+    required this.label,
+    required this.bg,
+    required this.fg,
+    this.border,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       margin: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(20),
-        border: borderColor != null ? Border.all(color: borderColor!, width: 1) : null,
+        border: border != null ? Border.all(color: border!) : null,
       ),
       child: Text(
         label,
@@ -609,74 +1021,115 @@ class _Badge extends StatelessWidget {
   }
 }
 
-class _InputField extends StatelessWidget {
-  final TextEditingController ctrl;
-  final String hint;
-
-  const _InputField({required this.ctrl, required this.hint});
+class _ChangeButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  const _ChangeButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: ctrl,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: Colors.white38),
-        filled: true,
-        fillColor: const Color(0xFF2A2A2A),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide.none,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2A2A2A),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.primary.withAlpha(60)),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: AppColors.primary, size: 16),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _CompactPrayerRow extends StatelessWidget {
-  final PrayerTimesModel times;
-  const _CompactPrayerRow({required this.times});
+class _PickerTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+  const _PickerTile({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        _chip('الفجر', times.fajr),
-        _chip('الشروق', times.sunrise),
-        _chip('الظهر', times.dhuhr),
-        _chip('العصر', times.asr),
-        _chip('المغرب', times.maghrib),
-        _chip('العشاء', times.isha),
-      ],
-    );
-  }
-
-  Widget _chip(String label, String time) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white12),
-      ),
-      child: Column(
-        children: [
-          Text(label, style: const TextStyle(color: AppColors.primary, fontSize: 12)),
-          const SizedBox(height: 2),
-          Text(
-            time,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-            ),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2A2A2A),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primary.withAlpha(120)
+                : Colors.white12,
           ),
-        ],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? AppColors.primary : Colors.white54,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? AppColors.primary : Colors.white54,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  fontSize: 14,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: Colors.white38,
+              size: 20,
+            ),
+          ],
+        ),
       ),
     );
   }
 }
+
+String _arabicName(String name) => switch (name) {
+  'Fajr' => 'الفجر',
+  'Sunrise' => 'الشروق',
+  'Dhuhr' => 'الظهر',
+  'Asr' => 'العصر',
+  'Maghrib' => 'المغرب',
+  'Isha' => 'العشاء',
+  _ => name,
+};

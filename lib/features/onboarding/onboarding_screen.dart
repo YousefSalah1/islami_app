@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/app_assets.dart';
@@ -26,7 +27,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     {
       "title": "Reading the Quran",
       "body": "Read, and your Lord is the Most Generous",
-      "image": AppAssets.quranSura,
+      "image": AppAssets.readingQuran,
     },
     {
       "title": "Bearish",
@@ -55,11 +56,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         child: Column(
           children: [
             const SizedBox(height: 40),
-            // Title replaced by logo if available, or just text
-            Text(
-              AppStrings.appName,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 24),
-            ),
+            // Title replaced by logo
+            SvgPicture.asset(AppAssets.logoTop, height: 52),
             const SizedBox(height: 30),
             Expanded(
               child: PageView.builder(
@@ -71,7 +69,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Image.asset(page["image"]!, height: 300, fit: BoxFit.contain),
+                      page["image"]!.endsWith('.svg')
+                          ? SvgPicture.asset(page["image"]!, height: 300, fit: BoxFit.contain)
+                          : Image.asset(page["image"]!, height: 300, fit: BoxFit.contain),
                       const SizedBox(height: 40),
                       Text(
                         page["title"]!,

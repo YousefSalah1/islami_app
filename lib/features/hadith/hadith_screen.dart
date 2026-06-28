@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/utils/app_assets.dart';
 import '../hadith/providers/hadith_provider.dart';
 import '../../data/models/hadith_model.dart';
 
@@ -15,7 +16,9 @@ class HadithScreen extends StatelessWidget {
     final provider = context.watch<HadithProvider>();
 
     if (provider.isLoading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      );
     }
 
     if (provider.errorMessage != null) {
@@ -43,7 +46,11 @@ class HadithScreen extends StatelessWidget {
         const SizedBox(height: 16),
         const Text(
           'الحديث الشريف',
-          style: TextStyle(color: AppColors.primary, fontSize: 24, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: AppColors.primary,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 4),
         const Text(
@@ -73,7 +80,8 @@ class _HadithCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigator.pushNamed(context, '/hadith_details', arguments: hadith),
+      onTap: () =>
+          Navigator.pushNamed(context, '/hadith_details', arguments: hadith),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: LayoutBuilder(
@@ -81,21 +89,15 @@ class _HadithCard extends StatelessWidget {
             return Container(
               width: double.infinity,
               decoration: BoxDecoration(
+                color: AppColors.primary,
                 borderRadius: BorderRadius.circular(20),
                 image: const DecorationImage(
-                  image: AssetImage('assets/images/HadithCardBackGround.png'),
+                  image: AssetImage(AppAssets.hadithCardBg),
                   fit: BoxFit.cover,
+                  opacity: 0.2,
                 ),
               ),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  gradient: const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Color(0xCC000000)],
-                  ),
-                ),
+              child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -103,7 +105,7 @@ class _HadithCard extends StatelessWidget {
                     Text(
                       hadith.title,
                       style: const TextStyle(
-                        color: AppColors.primary,
+                        color: AppColors.black,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -115,7 +117,12 @@ class _HadithCard extends StatelessWidget {
                     Flexible(
                       child: Text(
                         hadith.content,
-                        style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.8),
+                        style: const TextStyle(
+                          color: AppColors.black,
+                          fontSize: 14,
+                          height: 1.8,
+                          fontWeight: FontWeight.w600,
+                        ),
                         textAlign: TextAlign.center,
                         maxLines: 8,
                         overflow: TextOverflow.fade,
@@ -130,12 +137,14 @@ class _HadithCard extends StatelessWidget {
                           label: 'Copy',
                           onTap: () {
                             Clipboard.setData(
-                              ClipboardData(text: '${hadith.title}\n\n${hadith.content}'),
+                              ClipboardData(
+                                text: '${hadith.title}\n\n${hadith.content}',
+                              ),
                             );
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('Copied to clipboard'),
-                                backgroundColor: AppColors.primary,
+                                backgroundColor: AppColors.black,
                               ),
                             );
                           },
@@ -144,7 +153,9 @@ class _HadithCard extends StatelessWidget {
                         _ActionButton(
                           icon: Icons.share_rounded,
                           label: 'Share',
-                          onTap: () => Share.share('${hadith.title}\n\n${hadith.content}'),
+                          onTap: () => Share.share(
+                            '${hadith.title}\n\n${hadith.content}',
+                          ),
                         ),
                       ],
                     ),
@@ -163,7 +174,11 @@ class _ActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  const _ActionButton({required this.icon, required this.label, required this.onTap});
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -172,7 +187,8 @@ class _ActionButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
         decoration: BoxDecoration(
-          color: AppColors.primary.withAlpha(200),
+          color: Colors.transparent,
+          border: Border.all(color: AppColors.black, width: 1.5),
           borderRadius: BorderRadius.circular(30),
         ),
         child: Row(
@@ -182,7 +198,10 @@ class _ActionButton extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               label,
-              style: const TextStyle(color: AppColors.black, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                color: AppColors.black,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),

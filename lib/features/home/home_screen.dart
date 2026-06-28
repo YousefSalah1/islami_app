@@ -20,7 +20,15 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  // IndexedStack keeps all tabs alive — zero rebuilds on tab switch
+  /// Per-tab background PNGs — one for each tab
+  static const List<String> _backgrounds = [
+    AppAssets.background_quran,
+    AppAssets.background_hadith,
+    AppAssets.background_azkar,
+    AppAssets.background_radio,
+    AppAssets.background_prayer_time,
+  ];
+
   static const List<Widget> _screens = [
     QuranTab(),
     HadithScreen(),
@@ -31,20 +39,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Full-screen background: placed outside Scaffold so it covers
-    // status bar, nav bar, and everything else without gaps.
     return Stack(
       fit: StackFit.expand,
       children: [
-        // ── Background fills 100% of screen ─────────────────
-        RepaintBoundary(child: Image.asset(AppAssets.background, fit: BoxFit.cover)),
+        // ── Per-tab PNG background with cross-fade on tab switch ──────────
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 400),
+          transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
+          child: RepaintBoundary(
+            key: ValueKey(_selectedIndex),
+            child: Image.asset(
+              _backgrounds[_selectedIndex],
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+            ),
+          ),
+        ),
 
-        // ── Scaffold is transparent so background shows through ─
+        // ── Dark overlay for text readability ─────────────────────────────
+        Container(color: Colors.black.withAlpha(130)),
+
+        // ── Transparent Scaffold ──────────────────────────────────────────
         Scaffold(
           backgroundColor: Colors.transparent,
-          extendBody: true, // body extends behind bottom nav bar
           body: SafeArea(
-            bottom: false, // bottom handled by extendBody padding in lists
+            bottom: false,
             child: IndexedStack(index: _selectedIndex, children: _screens),
           ),
           bottomNavigationBar: BottomNavigationBar(
