@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/utils/app_assets.dart';
@@ -19,6 +20,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
+  // IndexedStack keeps all tabs alive — zero rebuilds on tab switch
   static const List<Widget> _screens = [
     QuranTab(),
     HadithScreen(),
@@ -29,29 +31,35 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          // RepaintBoundary: background never repaints during scrolls
-          RepaintBoundary(
-            child: Positioned.fill(child: Image.asset(AppAssets.background, fit: BoxFit.cover)),
-          ),
-          SafeArea(
+    // Full-screen background: placed outside Scaffold so it covers
+    // status bar, nav bar, and everything else without gaps.
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // ── Background fills 100% of screen ─────────────────
+        RepaintBoundary(child: Image.asset(AppAssets.background, fit: BoxFit.cover)),
+
+        // ── Scaffold is transparent so background shows through ─
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          extendBody: true, // body extends behind bottom nav bar
+          body: SafeArea(
+            bottom: false, // bottom handled by extendBody padding in lists
             child: IndexedStack(index: _selectedIndex, children: _screens),
           ),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
-        items: [
-          _navItem(AppAssets.quranIcon, AppStrings.quranTab, 0),
-          _navItem(AppAssets.hadithIcon, AppStrings.hadithTab, 1),
-          _navItem(AppAssets.sebhaIcon, AppStrings.azkarTab, 2),
-          _navItem(AppAssets.radioIcon, AppStrings.radioTab, 3),
-          _navItem(AppAssets.timeIcon, AppStrings.timesTab, 4),
-        ],
-      ),
+          bottomNavigationBar: BottomNavigationBar(
+            currentIndex: _selectedIndex,
+            onTap: (index) => setState(() => _selectedIndex = index),
+            items: [
+              _navItem(AppAssets.quranIcon, AppStrings.quranTab, 0),
+              _navItem(AppAssets.hadithIcon, AppStrings.hadithTab, 1),
+              _navItem(AppAssets.sebhaIcon, AppStrings.azkarTab, 2),
+              _navItem(AppAssets.radioIcon, AppStrings.radioTab, 3),
+              _navItem(AppAssets.timeIcon, AppStrings.timesTab, 4),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

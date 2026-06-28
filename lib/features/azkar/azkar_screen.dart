@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../sebha/providers/sebha_provider.dart';
 import '../../data/models/zikr_model.dart';
@@ -24,14 +25,14 @@ class AzkarScreen extends StatelessWidget {
 
     return Column(
       children: [
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
         const Text(
           'الأذكار',
-          style: TextStyle(color: AppColors.primary, fontSize: 26, fontWeight: FontWeight.bold),
+          style: TextStyle(color: AppColors.primary, fontSize: 24, fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
 
-        // Category selector
+        // ── Category chips ─────────────────────────────────────
         SizedBox(
           height: 44,
           child: ListView.builder(
@@ -43,9 +44,9 @@ class AzkarScreen extends StatelessWidget {
               return GestureDetector(
                 onTap: () => provider.selectCategory(index),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
+                  duration: const Duration(milliseconds: 220),
                   margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
                     color: selected ? AppColors.primary : const Color(0xFF2A2A2A),
                     borderRadius: BorderRadius.circular(22),
@@ -65,33 +66,32 @@ class AzkarScreen extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
 
-        // Progress info
+        // ── Progress info ──────────────────────────────────────
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'Zikr ${provider.currentZikrIndex + 1} / ${provider.currentCategoryZikr.length}',
-                style: const TextStyle(color: Colors.white70, fontSize: 13),
+                style: const TextStyle(color: Colors.white60, fontSize: 12),
               ),
               TextButton.icon(
-                onPressed: () {
-                  provider.reset();
-                },
-                icon: const Icon(Icons.refresh_rounded, size: 16, color: AppColors.primary),
+                onPressed: provider.reset,
+                icon: const Icon(Icons.refresh_rounded, size: 15, color: AppColors.primary),
                 label: const Text(
                   'Reset',
-                  style: TextStyle(color: AppColors.primary, fontSize: 13),
+                  style: TextStyle(color: AppColors.primary, fontSize: 12),
                 ),
+                style: TextButton.styleFrom(padding: const EdgeInsets.all(4)),
               ),
             ],
           ),
         ),
 
-        // Zikr content
+        // ── Zikr view ──────────────────────────────────────────
         Expanded(
           child: provider.currentZikr == null
               ? const SizedBox.shrink()
@@ -128,117 +128,126 @@ class _ZikrView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress = targetCount > 0 ? tapCount / targetCount : 0.0;
+    final progress = targetCount > 0 ? (tapCount / targetCount).clamp(0.0, 1.0) : 0.0;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: Column(
-        children: [
-          // Zikr text card
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E1E1E),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.primary.withAlpha(60)),
-              ),
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      zikr.content,
-                      style: const TextStyle(
-                        color: AppColors.primary,
-                        fontSize: 20,
-                        height: 1.9,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      textAlign: TextAlign.center,
-                      textDirection: TextDirection.rtl,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final ringSize = (constraints.maxWidth * 0.30).clamp(90.0, 130.0);
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+          child: Column(
+            children: [
+              // Zikr text card — takes remaining space
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E1E1E),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.primary.withAlpha(60)),
+                  ),
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Column(
+                      children: [
+                        Text(
+                          zikr.content,
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 18,
+                            height: 1.9,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          textAlign: TextAlign.center,
+                          textDirection: TextDirection.rtl,
+                        ),
+                        if (zikr.description.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            zikr.description,
+                            style: const TextStyle(
+                              color: Colors.white54,
+                              fontSize: 12,
+                              height: 1.6,
+                            ),
+                            textAlign: TextAlign.center,
+                            textDirection: TextDirection.rtl,
+                          ),
+                        ],
+                      ],
                     ),
-                    if (zikr.description.isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        zikr.description,
-                        style: const TextStyle(color: Colors.white54, fontSize: 13, height: 1.6),
-                        textAlign: TextAlign.center,
-                        textDirection: TextDirection.rtl,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Circular counter
-          GestureDetector(
-            onTap: onTap,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                SizedBox(
-                  width: 120,
-                  height: 120,
-                  child: CircularProgressIndicator(
-                    value: progress.clamp(0.0, 1.0),
-                    strokeWidth: 8,
-                    backgroundColor: Colors.white12,
-                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
                   ),
                 ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
+              ),
+
+              const SizedBox(height: 16),
+
+              // Counter ring — tap to count
+              GestureDetector(
+                onTap: onTap,
+                child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Text(
-                      '$tapCount',
-                      style: const TextStyle(
-                        color: AppColors.primary,
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
+                    SizedBox(
+                      width: ringSize,
+                      height: ringSize,
+                      child: CircularProgressIndicator(
+                        value: progress,
+                        strokeWidth: 7,
+                        backgroundColor: Colors.white12,
+                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
                       ),
                     ),
-                    Text(
-                      '/ $targetCount',
-                      style: const TextStyle(color: Colors.white54, fontSize: 14),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '$tapCount',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: ringSize * 0.26,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '/ $targetCount',
+                          style: const TextStyle(color: Colors.white54, fontSize: 12),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Next button
-          GestureDetector(
-            onTap: onNext,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withAlpha(30),
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: AppColors.primary.withAlpha(120)),
               ),
-              child: const Text(
-                'التالي',
-                style: TextStyle(
-                  color: AppColors.primary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+
+              const SizedBox(height: 14),
+
+              // Next button
+              GestureDetector(
+                onTap: onNext,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withAlpha(30),
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: AppColors.primary.withAlpha(120)),
+                  ),
+                  child: const Text(
+                    'التالي',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(height: 10),
+            ],
           ),
-          const SizedBox(height: 16),
-        ],
-      ),
+        );
+      },
     );
   }
 }
