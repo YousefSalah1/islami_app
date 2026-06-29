@@ -4,11 +4,11 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/utils/app_assets.dart';
-import '../hadith/hadith_screen.dart';
-import '../azkar/azkar_screen.dart';
-import '../radio/radio_screen.dart';
-import '../times/times_screen.dart';
-import 'quran_tab.dart';
+import '../hadith/presentation/screens/hadith_screen/hadith_screen.dart';
+import '../azkar/presentation/screens/azkar_screen/azkar_screen.dart';
+import '../radio/presentation/screens/radio_screen/radio_screen.dart';
+import '../times/presentation/screens/times_screen/times_screen.dart';
+import '../quran/presentation/screens/quran_tab/quran_tab.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

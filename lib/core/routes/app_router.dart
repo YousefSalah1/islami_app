@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
-import '../../features/quran/sura_details_screen.dart';
-import '../../features/hadith/hadith_detail_screen.dart';
-import '../../data/models/surah_model.dart';
-import '../../data/models/hadith_model.dart';
+import '../../features/quran/presentation/screens/sura_details_screen/sura_details_screen.dart';
+import '../../features/hadith/presentation/screens/hadith_detail_screen/hadith_detail_screen.dart';
+import '../../features/quran/domain/entities/surah_entity.dart';
+import '../../features/hadith/data/models/hadith_model.dart';
 
 class AppRouter {
   static const String splash = '/';
@@ -20,7 +20,7 @@ class AppRouter {
       case onboarding:
         return MaterialPageRoute(builder: (_) => const OnboardingScreen());
       case suraDetails:
-        final surah = settings.arguments as SurahModel;
+        final surah = settings.arguments as SurahEntity;
         return PageRouteBuilder(
           pageBuilder: (_, __, ___) => SuraDetailsScreen(surah: surah),
           transitionsBuilder: (_, animation, __, child) => SlideTransition(
