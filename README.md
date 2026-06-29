@@ -4,32 +4,53 @@ A beautiful, comprehensive, and scalable Islamic companion application built wit
 
 ---
 
-## ✨ Features
+## ✨ Core Features
 
-- **📖 Holy Quran:** Read the Holy Quran smoothly with beautiful typography and UI. It tracks your reading progress and surah indexing.
-- **📜 Hadith Collection:** A collection of authentic Ahadith with a clean reading interface.
-- **📿 Azkar (Sebha):** A smart digital Sebha with categorized daily Azkar (Morning, Evening, etc.) and a beautiful ring-progress animation.
-- **📻 Live Radio:** Listen to the Holy Quran broadcasts live directly from the app.
-- **🕌 Prayer Times:** Accurate prayer times based on the user's city/country, featuring next-prayer countdowns and caching for offline use.
-- **🎨 Premium UI:** Custom-designed SVGs, beautiful per-tab backgrounds, and smooth animations.
+- **🕌 Advanced Prayer Times:**
+  - **GPS Integration:** Automatically detects the user's location via GPS (`geolocator` & `geocoding`) to fetch highly accurate prayer times from the AlAdhan API.
+  - **City/Country Search:** Allows users to manually search for any city worldwide to get its prayer times.
+  - **Dynamic Next-Prayer Countdown:** A real-time reactive timer calculating the exact hours, minutes, and seconds remaining until the next prayer.
+  - **Offline Caching:** Uses `SharedPreferences` to cache the latest fetched prayer times so the app works flawlessly offline.
+- **📻 Live Holy Quran Radio:** Features real-time audio streaming of the Holy Quran broadcast with reactive play/pause states using `audioplayers`.
+- **📿 Smart Azkar (Sebha):** A deeply interactive digital Sebha with categorized daily Azkar (Morning, Evening, etc.) featuring complex ring-progress animations and haptic feedback.
+- **📖 Holy Quran:** Read the Holy Quran smoothly with beautiful typography. Tracks your reading progress, surah indexing, and renders localized Arabic text perfectly.
+- **📜 Hadith Collection:** A collection of authentic Ahadith with a clean reading interface and seamless navigation.
 
 ---
 
-## 🏗️ Architecture & State Management
+## 🏗️ Architecture & Advanced Technical Skills Demonstrated
 
-This project is built using a **Highly Scalable, Layer-First Clean Architecture** to ensure maintainability, testability, and clear separation of concerns.
+This project is not just a UI showcase; it is engineered using Enterprise-Level architectural patterns to ensure maximum scalability, maintainability, and testability.
 
-### 🧠 State Management
-- **BLoC (Business Logic Component):** All features use the strict BLoC pattern with the **Contract Pattern** (Event & State classes are bundled into a unified `contract.dart` file).
-- No legacy `Provider`, `Cubit`, or `Riverpod` are used.
+### 🧠 Layer-First Clean Architecture
+The entire codebase strictly follows Clean Architecture principles, completely decoupling the UI from the business logic and data layers.
+- **Domain Layer:** Pure Dart entities, use cases, and abstract repository contracts.
+- **Data Layer:** API DataSources, JSON models, and concrete repository implementations.
+- **Presentation Layer:** UI screens and BLoC state management.
 
-### 💉 Dependency Injection
-- **GetIt:** Used as the central Service Locator.
-- The entire dependency graph (DataSources → Repositories → UseCases → BLoCs) is registered cleanly in `lib/di/injector.dart`.
+### ⚙️ State Management (BLoC + Contract Pattern)
+- Fully migrated away from legacy state management tools (like standard Providers) to the robust **BLoC (Business Logic Component)** pattern.
+- Implements the **Contract Pattern**, where all Events and States for a specific feature are cleanly bundled into a unified `contract.dart` file.
+- Ensures a strict, one-way data flow: `Screen` ➔ `Bloc` ➔ `UseCase` ➔ `Repository (Interface)` ➔ `Repository (Impl)` ➔ `DataSource`.
 
-### 📂 Folder Structure
+### 💉 Dependency Injection (GetIt)
+- The entire dependency graph is centrally managed using **GetIt** (`lib/di/injector.dart`).
+- DataSources, Repositories, UseCases, and BLoCs are injected seamlessly, completely preventing tight coupling between classes.
 
-The codebase is organized by **Features**, where each feature strictly follows the Clean Architecture layers:
+### 🧹 0-Error Static Analysis & Code Quality
+- The project is heavily linted and deeply refactored to achieve **0 Errors and 0 Warnings** in `flutter analyze`.
+- Dead code, unused assets, and duplicate imports have been aggressively pruned to optimize the build size and maintain a pristine codebase.
+
+### 🎨 Premium & Responsive UI/UX
+- **Unified Branding:** Custom SVG-based headers and dynamic routing across the app.
+- **Responsive Layouts:** The app uses layout builders and constraints to ensure it looks gorgeous on any screen size.
+- **Smooth Animations:** Integrated micro-animations, implicit animated containers, and elegant page transitions.
+
+---
+
+## 📂 Folder Structure
+
+The codebase is organized by **Features**, adhering to a modular, feature-first approach:
 
 ```text
 lib/
@@ -37,42 +58,26 @@ lib/
  ┣ data/              # Global raw data (e.g., local JSONs)
  ┣ di/                # Dependency Injection setup (injector.dart)
  ┗ features/
-    ┣ quran/
-    ┣ hadith/
-    ┣ azkar/
-    ┣ radio/
-    ┣ times/
-    ┗ onboarding/
+    ┣ quran/          # Quran reading and sura details
+    ┣ hadith/         # Authentic Ahadith collection
+    ┣ azkar/          # Categorized Azkar and animated Sebha
+    ┣ radio/          # Audio streaming radio
+    ┣ times/          # GPS, AlAdhan API, and countdown timer
+    ┗ onboarding/     # First-launch welcome experience
 ```
-
-Inside **every feature** (e.g., `times/`), the structure is:
-```text
-features/times/
- ┣ domain/
- ┃  ┣ entities/       # Pure Dart domain objects
- ┃  ┣ repository/     # Abstract repository contracts
- ┃  ┗ usecase/        # Business logic executors
- ┣ data/
- ┃  ┣ models/         # JSON serializable models (extends Entities)
- ┃  ┣ data_source/    # Remote/Local API calls
- ┃  ┗ repository/     # Repository implementations
- ┗ presentation/
-    ┗ screens/        # UI and BLoC implementations
-```
-*Data Flow:* `Screen` ➔ `Bloc` ➔ `UseCase` ➔ `Repository (Interface)` ➔ `Repository (Impl)` ➔ `DataSource`
 
 ---
 
 ## 🛠️ Technologies & Packages Used
 
 - **Flutter & Dart** (Latest SDK)
-- **flutter_bloc:** For reactive state management.
+- **flutter_bloc:** For reactive, predictable state management.
 - **get_it:** For Dependency Injection.
-- **dio:** For handling REST API requests (e.g., AlAdhan Prayer Times API).
-- **shared_preferences:** For local caching (Prayer Times, Location, Onboarding state).
-- **flutter_svg:** For crisp and performant vector assets and icons.
+- **dio:** For robust REST API networking (AlAdhan API).
+- **shared_preferences:** For local offline caching of data and app state.
+- **flutter_svg:** For crisp and performant vector assets (logos and icons).
 - **audioplayers:** For Radio stream playback.
-- **geolocator / geocoding:** For fetching location-based prayer times.
+- **geolocator / geocoding:** For fetching and reversing GPS coordinates.
 
 ---
 
@@ -103,12 +108,6 @@ features/times/
 
 ---
 
-## 🎨 Design Assets
-
-All UI vectors, backgrounds, and icons are custom-made and properly linked in `lib/core/utils/app_assets.dart`. Unused assets have been completely pruned for an optimized build size.
-
----
-
 <p align="center">
-  Built with ❤️ for the Muslim Community.
+  Built with ❤️ for the Muslim Community, focusing on Code Quality and Clean Architecture.
 </p>
