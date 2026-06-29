@@ -27,12 +27,11 @@ class AppAssets {
   static const String radio = '${_images}radio.png';
   static const String shape4 = '${_images}Shape-04.png';
   static const String shape7 = '${_images}Shape-07.png';
-  static const String welcome = '${_images}welcome.png';
+  static const String welcome = '${_svg}welcom_screen.svg';
 
   // ── Logo & decorative SVGs (from help folder) ─────────────────────────────
   static const String logoTop = '${_svg}logo_on_top.svg';
-  static const String readingQuran = '${_svg}Reading_the_Quran.svg';
-  static const String suraNunmber = '${_images}Sura_Number.svg';
+  static const String readingQuran = '${_svg}reading_screen.svg';
   static const String suraNum = '${_svg}Sura_num.svg';
   static const String necklace = '${_svg}necklace_down_menu_azkar.svg';
 
